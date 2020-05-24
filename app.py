@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
 """ basic routing layer to handle incoming and outgoing requests between our bot and slack """
 import json
+
+# external package imports
 import jinja2
 from flask import render_template, request
 from slackeventsapi import SlackEventAdapter
-from bot import Bot
-from match import generate_matches
+
+# local project imports 
+from src.bot import Bot
+from src.match import generate_matches
 
 matching_bot = Bot()
 events_adapter = SlackEventAdapter(matching_bot.verification, "/slack")
