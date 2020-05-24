@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 
+# external package imports
 from slackclient import SlackClient
 
 class Bot(object):
