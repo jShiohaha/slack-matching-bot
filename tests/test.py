@@ -75,6 +75,27 @@ class TestNewGraph(unittest.TestCase):
         self.assertEqual(num_matches, int(n/2))
         self.assertEqual(len(matches), int(n/2))
 
+    def test_matches_terminate_after_adding_removing_people(self):
+        names = list(NAMES)
+        n = len(names)
+        g = build_graph(names)
+
+        # 500 is an arbitrary constant, but matching should terminate before then
+        terminated = False
+        for i in range(500):
+            num_matches, matches = generate_matches(names, g)
+            s = matches_to_str(num_matches, matches)
+
+            if i == 25:
+                names.extend(NAMES_TWO)
+            if i == 150:
+                names = [n for n in names if n not in NAMES]
+                names.extend(NAMES_THREE)
+            if s == "No matches remaining for the any members.":
+                terminated = True
+                break
+        self.assertTrue(terminated)
+
 
 ''' GROUPINGS NOT POSSIBLE '''
 class TestNoMatches(unittest.TestCase):
