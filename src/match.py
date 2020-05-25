@@ -129,3 +129,29 @@ def generate_matches(individuals, graph):
     matches.extend(list(members_with_no_matches))
     # n matches, m unmatched, len(matches)-n-m impossible matches
     return num_matches, matches # TODO: (num_matches, num_unmatched, len(matches)-num_matches-num_unmatched)
+
+
+def matches_to_str(num_matches, matches):
+    # no matches or individuals
+    if num_matches < 0:
+        return "A channel must have at least one person before attempting to generate matches"
+    if len(matches) == 0:
+        return "No available matches found."
+    if num_matches == 0:
+        return "No matches remaining for the any members."
+
+    res = ""
+    if num_matches == 1:
+        res += "Here is the 1 generated match 👋\n\n"
+    else:
+        res += "Here are the {0} generated matches 👋\n\n".format(num_matches)
+
+    for idx in range(num_matches):
+        match = matches[idx]
+        res += "{0}. {1}\n".format((idx+1), ", ".join([n for n in match]))
+
+    if num_matches != len(matches):
+        match_subset = matches[num_matches:]
+        match_subset.sort()
+        res += "\nNo available matches found for the following members: {0}\n".format(", ".join([n for n in match_subset])) 
+    return res
