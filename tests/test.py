@@ -190,7 +190,7 @@ class TestNewMembersAdded(unittest.TestCase):
 class TestOutputFormatting(unittest.TestCase):
     def test_output_with_no_individuals(self):
         s = matches_to_str(-1, [])
-        self.assertEqual(s, "A channel must have at least one person before attempting to generate matches")
+        self.assertEqual(s, "A channel must have at least one person before attempting to generate matches.")
 
     def test_output_with_no_matches(self):
         s = matches_to_str(0, [])
@@ -203,13 +203,13 @@ class TestOutputFormatting(unittest.TestCase):
     def test_output_with_no_unmatched_members(self):
         num_matches, matches = generate_matches(FOUR_INDIVIDUALS, None)
         s = matches_to_str(num_matches, matches)
-        self.assertIn("Here are the {0} generated matches".format(num_matches), s)
+        self.assertIn("*Here are today's {0} generated matches*".format(num_matches), s)
         self.assertNotIn("No available matches found for the following members", s)
 
     def test_output_with_unmatched_members(self):
         num_matches, matches = generate_matches(FOUR_INDIVIDUALS, build_empty_graph(THREE_INDIVIDUALS))
         s = matches_to_str(num_matches, matches)
-        self.assertIn("Here is the {0} generated match".format(num_matches), s)
+        self.assertIn("*Here is today's {0} generated match*".format(num_matches), s)
         self.assertIn("No available matches found for the following members", s)
 
 

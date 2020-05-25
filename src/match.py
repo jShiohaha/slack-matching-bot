@@ -134,7 +134,7 @@ def generate_matches(individuals, graph):
 def matches_to_str(num_matches, matches):
     # no matches or individuals
     if num_matches < 0:
-        return "A channel must have at least one person before attempting to generate matches"
+        return "A channel must have at least one person before attempting to generate matches."
     if len(matches) == 0:
         return "No available matches found."
     if num_matches == 0:
@@ -142,13 +142,13 @@ def matches_to_str(num_matches, matches):
 
     res = ""
     if num_matches == 1:
-        res += "Here is the 1 generated match 👋\n\n"
+        res += "*Here is today's 1 generated match* 👋\n\n"
     else:
-        res += "Here are the {0} generated matches 👋\n\n".format(num_matches)
+        res += "*Here are today's {0} generated matches* 👋\n\n".format(num_matches)
 
     for idx in range(num_matches):
         match = matches[idx]
-        res += "{0}. {1}\n".format((idx+1), ", ".join([n for n in match]))
+        res += "*{0}*. {1}\n".format((idx+1), ", ".join([n for n in match]))
 
     if num_matches != len(matches):
         match_subset = matches[num_matches:]
