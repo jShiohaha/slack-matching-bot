@@ -1,11 +1,19 @@
 # -*- coding: utf-8 -*-
+import ast
+import json
 import os
+import requests
 
 # external package imports
-from slackclient import SlackClient
+from slack import WebClient
+from pprint import pprint
+
+# local project imports
+from src.match import build_graph, generate_matches, matches_to_str
+
 
 class Bot(object):
-    def __init__(self):
+    def __init__(self, store_client):
         super(Bot, self).__init__()
         # when we instantiate a new bot object, we can access the app
         # credentials we set earlier in our local development environment.
@@ -16,7 +24,9 @@ class Bot(object):
                       # scope that your app will need.
                       "scope": "bot"}
         self.verification = os.environ.get("VERIFICATION_TOKEN")
-        self.client = SlackClient("")
+        self.bot_bearer_token = os.environ.get("BOT_BEARER_TOKEN")
+        self.client = WebClient(token=self.bot_bearer_token)
+        self.store_client = store_client
 
     def auth(self, code):
         """ here we'll create a method to exchange the temporary auth code for an
@@ -28,12 +38,49 @@ class Bot(object):
                                              code=code)
         # we'll save the bot_user_id to check incoming messages mentioning our bot
         self.bot_user_id = auth_response["bot"]["bot_user_id"]
-        self.client = SlackClient(auth_response["bot"]["bot_access_token"])
+        self.client = WebClient(token=auth_response["bot"]["bot_access_token"])
 
-    def say_hello(self, message):
-        """ here we'll create a method to respond when a user dm's our bot to say hello! """
-        channel = message["channel"]
-        hello_response = "I want to live! :pray: Please build me <@%s>" % message["user"]
-        self.client.api_call("chat.postMessage",
-                             channel=channel,
-                             text=hello_response)
+    def create_member_ids_to_names_map(self, member_ids):
+        members_map = dict()
+        member_ids = set(member_ids) # o(1) lookup when hashed
+        for paginated_response in self.client.users_list(limit=200):
+            for user in paginated_response["members"]:
+                if user["id"] in member_ids:
+                    name = user["real_name"]
+                    if name is None or name == "":
+                        name = user["name"]
+                    members_map[user["id"]] = name
+
+        return members_map
+
+    def get_channel_member_ids(self, channel_id):
+        def filter_whitelisted_users(user):
+            WHITELIST_USERS = self.store_client.get_white_listed_users()
+            if user in WHITELIST_USERS:
+                return False
+            else:
+                return True
+        response = self.client.conversations_members(channel=channel_id)
+        member_ids = response["members"]
+        filtered_users = list(filter(filter_whitelisted_users, member_ids))
+        return filtered_users
+
+    # TODO: handle any slack / personal exceptions
+    def generate_matches(self, channel_id):
+        # generate_matches
+        member_ids = self.get_channel_member_ids(channel_id)
+        graph = self.store_client.get_latest_graph_instance()
+        # create graph if None in order to pass by reference
+        if graph is None:
+            graph = build_graph(member_ids)
+        else:
+            graph = graph["graph"]
+        num_matches, matches = generate_matches(member_ids, graph)
+        # avoid extra api calls and computation when there are no matches
+        if num_matches <= 0:
+            return matches_to_str(num_matches, matches)
+        self.store_client.insert_graph_instance(graph)
+        members_map = self.create_member_ids_to_names_map(member_ids)
+        # convert matches using human readable names from member_map
+        matches = [[members_map[user] if type(match) is list else members_map[match] for user in match] for match in matches]
+        return matches_to_str(num_matches, matches)
