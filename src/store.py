@@ -37,12 +37,12 @@ class PyMongoClient:
 
 class GraphMongoClient(PyMongoClient):
     databaseName = os.getenv('PYMONGO_DB_NAME')
-    collectionName = os.getenv('PYMONGO_GRAPH_COLLECTION')
+    graph_collection = os.getenv('PYMONGO_GRAPH_COLLECTION')
 
     def __init__(self):
         super().__init__()
         self._setDatabase(self.databaseName)
-        self._setCollection(self.collectionName)
+        self._setCollection(self.graph_collection)
 
     def insert_graph_instance(self, graph, date=None):
         if date is None:
@@ -57,3 +57,21 @@ class GraphMongoClient(PyMongoClient):
         result = self._getCollection().find().sort('date', pymongo.DESCENDING).limit(1)
         res_as_list = list(result)
         return None if len(res_as_list) == 0 else res_as_list[0]
+
+
+class RaikesMatchBotClient(GraphMongoClient):
+    whitelisted_user_collection = os.getenv('PYMONGO_WLU_COLLECTION')
+    admin_collection = os.getenv('PYMONGO_ADMIN_COLLECTION')
+
+    def __init__(self):
+        super().__init__()
+
+    def get_white_listed_users(self):
+        res = self._getDatabase()[self.whitelisted_user_collection].find_one()
+        white_listed_users = res["users"]
+        return white_listed_users
+    
+    def get_admin_users(self):
+        res = self._getDatabase()[self.admin_collection].find_one()
+        admin_users = res["users"]
+        return admin_users
