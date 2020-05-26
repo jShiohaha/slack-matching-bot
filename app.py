@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """ basic routing layer to handle incoming and outgoing requests between our bot and slack """
 import json
+import os
 
 # external package imports
 from flask import render_template, request
