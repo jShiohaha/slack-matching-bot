@@ -50,7 +50,6 @@ class Bot(object):
                     if name is None or name == "":
                         name = user["name"]
                     members_map[user["id"]] = name
-
         return members_map
 
     def get_channel_member_ids(self, channel_id):

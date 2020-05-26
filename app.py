@@ -4,7 +4,7 @@ import json
 import os
 
 # external package imports
-from flask import render_template, request
+from flask import Flask, render_template, request
 import jinja2
 from slack import WebClient
 from slackeventsapi import SlackEventAdapter
@@ -13,6 +13,8 @@ from slackeventsapi import SlackEventAdapter
 from src.bot import Bot
 from src.store import RaikesMatchBotClient
 from src.match import generate_matches
+
+app = Flask(__name__)
 
 # if this becomes more complex, we can use dependency injection
 mongo_client = RaikesMatchBotClient()
@@ -24,13 +26,13 @@ template_loader = jinja2.ChoiceLoader([
                   ])
 slack_events_adapter.server.jinja_loader = template_loader
 
-@slack_events_adapter.server.route("/install", methods=["GET"])
+@app.route("/install", methods=["GET"])
 def before_install():
     """ renders an installation page for our app """
     client_id = matching_bot.oauth["client_id"]
     return render_template("install.html", client_id=client_id)
 
-@slack_events_adapter.server.route("/thanks", methods=["GET"])
+@app.route("/thanks", methods=["GET"])
 def thanks():
     """ this route renders a page to thank users for installing our app """
     auth_code = request.args.get('code')
@@ -38,7 +40,7 @@ def thanks():
     return render_template("thanks.html")
 
 # here's some helpful debugging hints for checking that env vars are set
-@slack_events_adapter.server.before_first_request
+@app.before_first_request
 def before_first_request():
     client_id = matching_bot.oauth.get("client_id")
     client_secret = matching_bot.oauth.get("client_secret")
@@ -50,7 +52,7 @@ def before_first_request():
     if not verification:
         print("Can't find Verification Token, did you set this env variable?")
 
-@slack_events_adapter.server.route("/slack/generatematches", methods=["POST"])
+@app.route("/slack/generatematches", methods=["POST"])
 def handle_generate_matches_command():
     channel_id = request.form.get('channel_id', None)
     user_id = request.form.get('user_id', None)
@@ -84,5 +86,6 @@ def handle_generate_matches_command():
         "response_type": "in_channel"
     }, 200
 
+
 if __name__ == '__main__':
-    slack_events_adapter.start(debug=True)
+    app.run(port=5000)
