@@ -16,21 +16,20 @@ from src.match import generate_matches
 # if this becomes more complex, we can use dependency injection
 mongo_client = RaikesMatchBotClient()
 matching_bot = Bot(mongo_client)
-events_adapter = SlackEventAdapter(matching_bot.verification, "/slack")
-
+slack_events_adapter = SlackEventAdapter(matching_bot.verification, "/slack")
 template_loader = jinja2.ChoiceLoader([
-                    events_adapter.server.jinja_loader,
+                    slack_events_adapter.server.jinja_loader,
                     jinja2.FileSystemLoader(['templates']),
                   ])
-events_adapter.server.jinja_loader = template_loader
+slack_events_adapter.server.jinja_loader = template_loader
 
-@events_adapter.server.route("/install", methods=["GET"])
+@slack_events_adapter.server.route("/install", methods=["GET"])
 def before_install():
     """ renders an installation page for our app """
     client_id = matching_bot.oauth["client_id"]
     return render_template("install.html", client_id=client_id)
 
-@events_adapter.server.route("/thanks", methods=["GET"])
+@slack_events_adapter.server.route("/thanks", methods=["GET"])
 def thanks():
     """ this route renders a page to thank users for installing our app """
     auth_code = request.args.get('code')
@@ -38,7 +37,7 @@ def thanks():
     return render_template("thanks.html")
 
 # here's some helpful debugging hints for checking that env vars are set
-@events_adapter.server.before_first_request
+@slack_events_adapter.server.before_first_request
 def before_first_request():
     client_id = matching_bot.oauth.get("client_id")
     client_secret = matching_bot.oauth.get("client_secret")
@@ -50,7 +49,7 @@ def before_first_request():
     if not verification:
         print("Can't find Verification Token, did you set this env variable?")
 
-@events_adapter.server.route("/slack/generatematches", methods=["POST"])
+@slack_events_adapter.server.route("/slack/generatematches", methods=["POST"])
 def handle_generate_matches_command():
     channel_id = request.form.get('channel_id', None)
     user_id = request.form.get('user_id', None)
@@ -85,4 +84,4 @@ def handle_generate_matches_command():
     }, 200
 
 if __name__ == '__main__':
-    events_adapter.start(debug=True)
+    slack_events_adapter.start(debug=True)
