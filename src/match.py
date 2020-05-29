@@ -1,5 +1,6 @@
 import itertools
 import random
+import sys
 
 # external package imports
 from collections import OrderedDict
@@ -97,10 +98,10 @@ def generate_matches(individuals, graph):
         members_with_no_matches.add(k)
         set_of_members.remove(k)
 
-    odd_member = None
     if len(set_of_members) > 0 and len(set_of_members) % 2 == 1:
         # always choose someone with the fewest possible partners left
-        min_possible_partners = min([len(v) for v in graph.values() if len(v) != 0])
+        # 2*O(n) ; not sure how these iterators compare to normal for-loops
+        min_possible_partners = min([len(graph[member]) for member in set_of_members if len(graph[member]) != 0])
         odd_member = random.choice([member for member in set_of_members if len(graph[member]) <= min_possible_partners])
         # remove odd member from set_of_members
         set_of_members.remove(odd_member)
@@ -122,7 +123,7 @@ def generate_matches(individuals, graph):
             set_of_members.remove(k)
             set_of_members.remove(partner)
     unmatched_members = assign_unmatched_members_to_existing_groups(unmatched_members, matches, graph)
-    
+
     num_matches = len(matches)
     num_unmatched = len(unmatched_members)
     matches.extend(list(unmatched_members))
