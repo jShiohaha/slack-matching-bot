@@ -2,12 +2,11 @@
 import ast
 import json
 import os
-import requests
-
-# external package imports
-from slack import WebClient
 from pprint import pprint
 
+import requests
+# external package imports
+from slack import WebClient
 # local project imports
 from src.match import build_graph, generate_matches, matches_to_str
 

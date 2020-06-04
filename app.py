@@ -4,16 +4,15 @@ import json
 import os
 import threading
 
+import jinja2
 # external package imports
 from flask import Flask, render_template, request
-import jinja2
 from slack import WebClient
 from slackeventsapi import SlackEventAdapter
-
 # local project imports
 from src.bot import Bot
-from src.store import RaikesMatchBotClient
 from src.match import generate_matches
+from src.store import RaikesMatchBotClient
 
 app = Flask(__name__)
 
