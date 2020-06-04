@@ -21,10 +21,9 @@ app = Flask(__name__)
 mongo_client = RaikesMatchBotClient()
 matching_bot = Bot(mongo_client)
 slack_events_adapter = SlackEventAdapter(matching_bot.verification, "/slack")
-template_loader = jinja2.ChoiceLoader([
-    slack_events_adapter.server.jinja_loader,
-    jinja2.FileSystemLoader(['templates']),
-])
+template_loader = jinja2.ChoiceLoader(
+    [slack_events_adapter.server.jinja_loader, jinja2.FileSystemLoader(["templates"]),]
+)
 slack_events_adapter.server.jinja_loader = template_loader
 
 
@@ -38,9 +37,10 @@ def before_install():
 @app.route("/thanks", methods=["GET"])
 def thanks():
     """ this route renders a page to thank users for installing our app """
-    auth_code = request.args.get('code')
+    auth_code = request.args.get("code")
     matching_bot.auth(auth_code)
     return render_template("thanks.html")
+
 
 # here's some helpful debugging hints for checking that env vars are set
 
@@ -60,33 +60,31 @@ def before_first_request():
 
 @app.route("/slack/generatematches", methods=["POST"])
 def handle_generate_matches_command():
-    user_id = request.form.get('user_id', None)
+    user_id = request.form.get("user_id", None)
     response = ""
     if user_id not in mongo_client.get_admin_users():
         # send unauthorized message
-        response = ("Sorry, only specified users are authorized generate matches. "
-                    "If you think you should be authorized, contact Anna or Mark.")
+        response = (
+            "Sorry, only specified users are authorized generate matches. "
+            "If you think you should be authorized, contact Anna or Mark."
+        )
     else:
-        channel_id = request.form.get('channel_id', None)
+        channel_id = request.form.get("channel_id", None)
         # start a new thread that will generate the matches
-        x = threading.Thread(target=matching_bot.generate_matches,
-                             args=(channel_id,))
+        x = threading.Thread(target=matching_bot.generate_matches, args=(channel_id,))
         x.start()
         response = "Matches are being generated now and will be sent soon! ⏰"
     # send immediate response, ending this main request thread
-    return {
-        "blocks": [
-            {
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": response
-                }
-            }
-        ],
-        "response_type": "in_channel"
-    }, 200
+    return (
+        {
+            "blocks": [
+                {"type": "section", "text": {"type": "mrkdwn", "text": response}}
+            ],
+            "response_type": "in_channel",
+        },
+        200,
+    )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(port=5000)

@@ -17,12 +17,14 @@ class Bot(object):
         super(Bot, self).__init__()
         # when we instantiate a new bot object, we can access the app
         # credentials we set earlier in our local development environment.
-        self.oauth = {"client_id": os.environ.get("CLIENT_ID"),
-                      "client_secret": os.environ.get("CLIENT_SECRET"),
-                      # scopes provide and limit permissions to what our app
-                      # can access. it's important to use the most restricted
-                      # scope that your app will need.
-                      "scope": "bot"}
+        self.oauth = {
+            "client_id": os.environ.get("CLIENT_ID"),
+            "client_secret": os.environ.get("CLIENT_SECRET"),
+            # scopes provide and limit permissions to what our app
+            # can access. it's important to use the most restricted
+            # scope that your app will need.
+            "scope": "bot",
+        }
         self.verification = os.environ.get("VERIFICATION_TOKEN")
         self.bot_bearer_token = os.environ.get("BOT_BEARER_TOKEN")
         self.client = WebClient(token=self.bot_bearer_token)
@@ -32,10 +34,12 @@ class Bot(object):
         """ here we'll create a method to exchange the temporary auth code for an
         oauth token and save it in memory on our bot object for easier access.
         """
-        auth_response = self.client.api_call("oauth.access",
-                                             client_id=self.oauth['client_id'],
-                                             client_secret=self.oauth['client_secret'],
-                                             code=code)
+        auth_response = self.client.api_call(
+            "oauth.access",
+            client_id=self.oauth["client_id"],
+            client_secret=self.oauth["client_secret"],
+            code=code,
+        )
         # we'll save the bot_user_id to check incoming messages mentioning our bot
         self.bot_user_id = auth_response["bot"]["bot_user_id"]
         self.client = WebClient(token=auth_response["bot"]["bot_access_token"])
@@ -59,6 +63,7 @@ class Bot(object):
                 return False
             else:
                 return True
+
         response = self.client.conversations_members(channel=channel_id)
         member_ids = response["members"]
         filtered_users = list(filter(filter_whitelisted_users, member_ids))
@@ -67,22 +72,14 @@ class Bot(object):
     def format_slack_response(self, message):
         res = {
             "blocks": [
+                {"type": "section", "text": {"type": "mrkdwn", "text": message}},
+                {"type": "divider"},
                 {
                     "type": "section",
                     "text": {
                         "type": "mrkdwn",
-                        "text": message
-                    }
-                },
-                {
-                    "type": "divider"
-                },
-                {
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": "Notice an issue or bug? Submit an issue <https://github.com/jShiohaha/slack-matching-bot/issues|here>."
-                    }
+                        "text": "Notice an issue or bug? Submit an issue <https://github.com/jShiohaha/slack-matching-bot/issues|here>.",
+                    },
                 },
             ],
         }
@@ -105,13 +102,14 @@ class Bot(object):
         self.store_client.insert_graph_instance(graph)
         members_map = self.create_member_ids_to_names_map(member_ids)
         # convert matches using human readable names from member_map
-        matches = [[members_map[user] if type(
-            match) is list else members_map[match] for user in match] for match in matches]
-        message = self.format_slack_response(
-            matches_to_str(num_matches, matches))
+        matches = [
+            [
+                members_map[user] if type(match) is list else members_map[match]
+                for user in match
+            ]
+            for match in matches
+        ]
+        message = self.format_slack_response(matches_to_str(num_matches, matches))
         # send message channel (as bot) with matches
-        res = self.client.chat_postMessage(
-            channel=channel_id,
-            blocks=message["blocks"]
-        )
+        res = self.client.chat_postMessage(channel=channel_id, blocks=message["blocks"])
         pprint(res)
