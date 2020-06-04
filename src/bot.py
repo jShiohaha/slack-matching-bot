@@ -5,10 +5,13 @@ import os
 from pprint import pprint
 
 import requests
-# external package imports
 from slack import WebClient
+
+from src.match import build_graph
+from src.match import generate_matches
+from src.match import matches_to_str
+# external package imports
 # local project imports
-from src.match import build_graph, generate_matches, matches_to_str
 
 
 class Bot(object):
