@@ -74,13 +74,23 @@ class Bot(object):
     def format_slack_response(self, message):
         res = {
             "blocks": [
-                {"type": "section", "text": {"type": "mrkdwn", "text": message}},
-                {"type": "divider"},
                 {
                     "type": "section",
                     "text": {
                         "type": "mrkdwn",
-                        "text": "Notice an issue or bug? Submit an issue <https://github.com/jShiohaha/slack-matching-bot/issues|here>.",
+                        "text": message
+                    }
+                },
+                {
+                    "type": "divider"
+                },
+                {
+                    "type": "section",
+                    "text": {
+                        "type":
+                        "mrkdwn",
+                        "text":
+                        "Notice an issue or bug? Submit an issue <https://github.com/jShiohaha/slack-matching-bot/issues|here>.",
                     },
                 },
             ],
@@ -104,14 +114,13 @@ class Bot(object):
         self.store_client.insert_graph_instance(graph)
         members_map = self.create_member_ids_to_names_map(member_ids)
         # convert matches using human readable names from member_map
-        matches = [
-            [
-                members_map[user] if type(match) is list else members_map[match]
-                for user in match
-            ]
-            for match in matches
-        ]
-        message = self.format_slack_response(matches_to_str(num_matches, matches))
+        matches = [[
+            members_map[user] if type(match) is list else members_map[match]
+            for user in match
+        ] for match in matches]
+        message = self.format_slack_response(
+            matches_to_str(num_matches, matches))
         # send message channel (as bot) with matches
-        res = self.client.chat_postMessage(channel=channel_id, blocks=message["blocks"])
+        res = self.client.chat_postMessage(channel=channel_id,
+                                           blocks=message["blocks"])
         pprint(res)

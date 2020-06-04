@@ -23,9 +23,10 @@ app = Flask(__name__)
 mongo_client = RaikesMatchBotClient()
 matching_bot = Bot(mongo_client)
 slack_events_adapter = SlackEventAdapter(matching_bot.verification, "/slack")
-template_loader = jinja2.ChoiceLoader(
-    [slack_events_adapter.server.jinja_loader, jinja2.FileSystemLoader(["templates"]),]
-)
+template_loader = jinja2.ChoiceLoader([
+    slack_events_adapter.server.jinja_loader,
+    jinja2.FileSystemLoader(["templates"]),
+])
 slack_events_adapter.server.jinja_loader = template_loader
 
 
@@ -68,21 +69,26 @@ def handle_generate_matches_command():
         # send unauthorized message
         response = (
             "Sorry, only specified users are authorized generate matches. "
-            "If you think you should be authorized, contact Anna or Mark."
-        )
+            "If you think you should be authorized, contact Anna or Mark.")
     else:
         channel_id = request.form.get("channel_id", None)
         # start a new thread that will generate the matches
-        x = threading.Thread(target=matching_bot.generate_matches, args=(channel_id,))
+        x = threading.Thread(target=matching_bot.generate_matches,
+                             args=(channel_id, ))
         x.start()
         response = "Matches are being generated now and will be sent soon! ⏰"
     # send immediate response, ending this main request thread
     return (
         {
-            "blocks": [
-                {"type": "section", "text": {"type": "mrkdwn", "text": response}}
-            ],
-            "response_type": "in_channel",
+            "blocks": [{
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": response
+                }
+            }],
+            "response_type":
+            "in_channel",
         },
         200,
     )
