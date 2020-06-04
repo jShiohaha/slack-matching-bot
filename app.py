@@ -58,6 +58,11 @@ def before_first_request():
         print("Can't find Verification Token, did you set this env variable?")
 
 
+@app.route("/ping", methods=["GET"])
+def health_ping():
+    return "success"
+
+
 @app.route("/slack/generatematches", methods=["POST"])
 def handle_generate_matches_command():
     user_id = request.form.get('user_id', None)
