@@ -2,6 +2,7 @@
 """ basic routing layer to handle incoming and outgoing requests between our bot and slack """
 import json
 import os
+import threading
 
 # external package imports
 from flask import Flask, render_template, request
@@ -9,7 +10,7 @@ import jinja2
 from slack import WebClient
 from slackeventsapi import SlackEventAdapter
 
-# local project imports 
+# local project imports
 from src.bot import Bot
 from src.store import RaikesMatchBotClient
 from src.match import generate_matches
@@ -21,16 +22,18 @@ mongo_client = RaikesMatchBotClient()
 matching_bot = Bot(mongo_client)
 slack_events_adapter = SlackEventAdapter(matching_bot.verification, "/slack")
 template_loader = jinja2.ChoiceLoader([
-                    slack_events_adapter.server.jinja_loader,
-                    jinja2.FileSystemLoader(['templates']),
-                  ])
+    slack_events_adapter.server.jinja_loader,
+    jinja2.FileSystemLoader(['templates']),
+])
 slack_events_adapter.server.jinja_loader = template_loader
+
 
 @app.route("/install", methods=["GET"])
 def before_install():
     """ renders an installation page for our app """
     client_id = matching_bot.oauth["client_id"]
     return render_template("install.html", client_id=client_id)
+
 
 @app.route("/thanks", methods=["GET"])
 def thanks():
@@ -40,6 +43,8 @@ def thanks():
     return render_template("thanks.html")
 
 # here's some helpful debugging hints for checking that env vars are set
+
+
 @app.before_first_request
 def before_first_request():
     client_id = matching_bot.oauth.get("client_id")
@@ -52,36 +57,32 @@ def before_first_request():
     if not verification:
         print("Can't find Verification Token, did you set this env variable?")
 
+
 @app.route("/slack/generatematches", methods=["POST"])
 def handle_generate_matches_command():
-    channel_id = request.form.get('channel_id', None)
     user_id = request.form.get('user_id', None)
     response = ""
     if user_id not in mongo_client.get_admin_users():
         # send unauthorized message
         response = ("Sorry, only specified users are authorized generate matches. "
-                    "If you think you should be authorized, reach out to Anna or Mark.")
+                    "If you think you should be authorized, contact Anna or Mark.")
     else:
-        response = matching_bot.generate_matches(channel_id)
+        channel_id = request.form.get('channel_id', None)
+        # start a new thread that will generate the matches
+        x = threading.Thread(target=matching_bot.generate_matches,
+                             args=(channel_id,))
+        x.start()
+        response = "Matches are being generated now and will be sent soon! ⏰"
+    # send immediate response, ending this main request thread
     return {
-	    "blocks": [
+        "blocks": [
             {
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
                     "text": response
                 }
-            },
-            {
-                "type": "divider"
-            },
-            {
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": "Notice an issue or bug? Submit an issue <https://github.com/jShiohaha/slack-matching-bot/issues|here>."
-                }
-            },
+            }
         ],
         "response_type": "in_channel"
     }, 200
